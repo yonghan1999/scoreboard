@@ -48,8 +48,11 @@ impl Scoreboard {
             return Err(format!("玩家序号 {} 不存在", winner_id));
         }
 
-        // 胜出玩家 +1 分
-        *self.scores.get_mut(&winner_id).unwrap() += 1;
+        // 计算其他玩家数量
+        let other_players_count = self.players.len() - 1;
+        
+        // 胜出玩家获得其他玩家数量的分数（通杀机制）
+        *self.scores.get_mut(&winner_id).unwrap() += other_players_count as i32;
 
         // 其他玩家 -1 分
         for (id, score) in self.scores.iter_mut() {
@@ -158,14 +161,20 @@ mod tests {
         let mut scoreboard = Scoreboard::new();
         let id1 = scoreboard.add_player("玩家1".to_string()).unwrap();
         let id2 = scoreboard.add_player("玩家2".to_string()).unwrap();
+        let id3 = scoreboard.add_player("玩家3".to_string()).unwrap();
+        let id4 = scoreboard.add_player("玩家4".to_string()).unwrap();
         
         // 测试不存在的玩家ID
         assert!(scoreboard.update_scores(999).is_err());
         
-        // 测试正常更新
+        // 测试正常更新（4个玩家，1个胜出）
         assert!(scoreboard.update_scores(id1).is_ok());
-        assert_eq!(*scoreboard.scores.get(&id1).unwrap(), 1);
+        // 胜出玩家应该得到3分（其他3个玩家的分数）
+        assert_eq!(*scoreboard.scores.get(&id1).unwrap(), 3);
+        // 其他玩家各扣1分
         assert_eq!(*scoreboard.scores.get(&id2).unwrap(), -1);
+        assert_eq!(*scoreboard.scores.get(&id3).unwrap(), -1);
+        assert_eq!(*scoreboard.scores.get(&id4).unwrap(), -1);
     }
     
     #[test]
